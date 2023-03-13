@@ -1,0 +1,37 @@
+[package]
+name = "serrana"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.dev]
+strip = true
+opt-level = 2
+incremental = true
+lto = false
+
+[dependencies]
+dotenv = "0.15.0"
+tracing-subscriber = "0.2.0"
+evalexpr = "8.1.0"
+toml = "0.7.2"
+
+[dependencies.tokio]
+version = "1.0"
+features = ["macros", "signal", "rt-multi-thread", "time", "fs"]
+
+[dependencies.serenity]
+version = "0.11.5"
+features = ["framework", "standard_framework", "rustls_backend", "collector"]
+
+[dependencies.serde]
+version = "1.0.152"
+features = ["derive"]
+
+[dependencies.tracing]
+version = "0.1.37"
+features = ["std"]
+
+[dependencies.rand]
+version = "0.8.5"
+features = ["std_rng"]
