@@ -3,11 +3,12 @@
 [![Generic badge](https://img.shields.io/badge/License-GPL3.0-blue.svg)](https://shields.io/)
 
 
-Serrana is a Discord Bot written in Rust. Currently, she only has a few commands. However, I intend to add more in the future.
-
-### Appendix
-**Todo!()**
+### Description
+Serrana is a Multi-Purpose Discord Bot, written for the sole purpose of enhancing my work with Rust. Currently, Serrana is not planned to be released publically for other servers to use. For now, she is only a personal project, which will remain in selected servers of my choosing. However, you are welcome to fork this project, and have your own little taste of Serrana for yourself!
 
 
 ##### Roadmap
-**Todo!()**
+- Fully fledged out Tycoon.
+- Arithmetic including Trigonometry functions.
+- Commands to gamble away currency with.
+- More!
