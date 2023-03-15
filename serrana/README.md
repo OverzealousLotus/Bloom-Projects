@@ -1,1 +1,10 @@
-# TODO!
+### Crates
+- [Serenity](https://docs.rs/serenity/latest/serenity/)
+- [Tokio](https://docs.rs/tokio/latest/tokio/)
+- [Serde](https://docs.rs/serde/latest/serde/)
+- [Toml](https://docs.rs/toml/latest/toml/)
+- [Rand](https://docs.rs/rand/latest/rand/)
+- [Tracing](https://docs.rs/tracing/latest/tracing/)
+- [Tracing-Subscriber](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/)
+- [Evalexpr](https://docs.rs/evalexpr/latest/evalexpr/)
+- [Dotenv](https://docs.rs/dotenv/latest/dotenv/)
