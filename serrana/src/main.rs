@@ -107,7 +107,7 @@ async fn main() {
 
     // Create framework
     let framework = StandardFramework::new()
-        .configure(|c| c.owners(owners).prefix("::"))
+        .configure(|c| c.owners(owners).prefix("::").case_insensitivity(true))
         .group(&GENERAL_GROUP)
         .group(&OWNER_GROUP);
 
