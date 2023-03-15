@@ -7,4 +7,4 @@
 - [Tracing](https://docs.rs/tracing/latest/tracing/)
 - [Tracing-Subscriber](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/)
 - [Evalexpr](https://docs.rs/evalexpr/latest/evalexpr/)
-- [Dotenv](https://docs.rs/dotenv/latest/dotenv/)
+- [Dotenvy](https://docs.rs/dotenvy/latest/dotenvy/)

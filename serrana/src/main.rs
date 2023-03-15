@@ -83,11 +83,13 @@ struct Owner;
 #[tokio::main]
 async fn main() {
     // Initialize Environment Variables in .env file.
-    dotenv::dotenv().expect("Failed to load .env file");
+    dotenvy::dotenv().expect("Failed to load .env file!");
 
     // Initialize the logger to use environment variables.
     tracing_subscriber::fmt::init();
 
+    // If you're going to use this codebase, make sure to set token to your bot's token.
+    // Otherwise, your version of Serrana won't work.
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
     let http = Http::new(&token);
@@ -132,7 +134,7 @@ async fn main() {
         shard_manager.lock().await.shutdown_all().await;
     });
 
-    if let Err(why) = client.start().await {
-        error!("Client error: {:?}", why);
+    if let Err(reason) = client.start().await {
+        error!("Client error: {:?}", reason);
     }
 }

@@ -124,7 +124,6 @@ async fn produce(
 #[command]
 #[owners_only]
 async fn register_player(context: &Context, message: &Message) -> CommandResult {
-    dotenv::dotenv().expect("Error reading environment!");
     let database_path = env::var("DATABASE_PATH").expect("Error reading path to database!");
     let mut database = Database::default();
     let new_user = intake("Enter new user: ", context, message)
@@ -180,7 +179,7 @@ struct Database {
 #[command]
 async fn tycoon(context: &Context, message: &Message) -> CommandResult {
     // Make sure to include a path to your database in an .env file.
-    dotenv::dotenv().expect("Error reading environment!");
+    dotenvy::dotenv().expect("Error reading environment!");
     info!(
         "Tycoon started by {} in channel: {}!",
         message.author.name, message.channel_id
