@@ -11,7 +11,7 @@ use tokio::time::{sleep, Duration};
 
 // <=== Serenity ===>
 use serenity::framework::standard::macros::command;
-use serenity::framework::standard::CommandResult;
+use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
@@ -28,6 +28,9 @@ const MAIN_MENU: &str = "What would you like to do?:
 Procure: Procure credits by working!
 Exit | Quit | Abort: Exit Tycoon!
 Todo!: Unimplemented!";
+const HELP_MESSAGE: &str = "Options:
+Credits: Todo!
+Cuties: Currency used to gamble in games!";
 
 // <===== Functions =====>
 async fn intake(prompt: &str, context: &Context, message: &Message) -> String {
@@ -121,6 +124,57 @@ async fn produce(
     Ok(())
 }
 
+async fn game_loop(context: &Context, message: &Message) -> CommandResult {
+    // Make sure to include a path to your database in an .env file.
+    dotenvy::dotenv().expect("Error reading environment!");
+    info!(
+        "Tycoon started by {} in channel: {}!",
+        message.author.name, message.channel_id
+    );
+    let current_user = message.author.name.to_lowercase();
+    let database_path: String =
+        env::var("DATABASE_PATH").expect("Error fetching path to Database!");
+
+    'main_loop: loop {
+        let decision = intake(MAIN_MENU, context, message)
+            .await
+            .trim()
+            .to_uppercase();
+
+        match decision.as_str() {
+            "PRODUCE" | "PROCURE" => {
+                let time = intake("How long?: ", context, message)
+                    .await
+                    .parse::<usize>()?;
+                produce(
+                    database_path.clone(),
+                    time,
+                    current_user.clone(),
+                    context,
+                    message,
+                )
+                .await?;
+            }
+
+            "QUIT" | "EXIT" | "ABORT" => {
+                speak("EXIT", "Exited tycoon!", context, message).await;
+                break 'main_loop;
+            }
+
+            "NOOP" => {
+                speak("NOOP", "No response, aborting!", context, message).await;
+                error!("{} took too long to respond!", message.author.name);
+                break 'main_loop;
+            }
+
+            _ => {
+                speak("INVALID", "Invalid response, retrying!", context, message).await;
+            }
+        }
+    }
+    Ok(())
+}
+
 #[command]
 #[owners_only]
 async fn register_player(context: &Context, message: &Message) -> CommandResult {
@@ -177,54 +231,12 @@ struct Database {
 
 // <===== Command =====>
 #[command]
-async fn tycoon(context: &Context, message: &Message) -> CommandResult {
-    // Make sure to include a path to your database in an .env file.
-    dotenvy::dotenv().expect("Error reading environment!");
-    info!(
-        "Tycoon started by {} in channel: {}!",
-        message.author.name, message.channel_id
-    );
-    let current_user = message.author.name.to_lowercase();
-    let database_path: String =
-        env::var("DATABASE_PATH").expect("Error fetching path to Database!");
-
-    'main_loop: loop {
-        let decision = intake(MAIN_MENU, context, message)
-            .await
-            .trim()
-            .to_uppercase();
-
-        match decision.as_str() {
-            "PRODUCE" | "PROCURE" => {
-                let time = intake("How long?: ", context, message)
-                    .await
-                    .parse::<usize>()?;
-                produce(
-                    database_path.clone(),
-                    time,
-                    current_user.clone(),
-                    context,
-                    message,
-                )
-                .await?;
-            }
-
-            "QUIT" | "EXIT" | "ABORT" => {
-                speak("EXIT", "Exited tycoon!", context, message).await;
-                break 'main_loop;
-            }
-
-            "NOOP" => {
-                speak("NOOP", "No response, aborting!", context, message).await;
-                error!("{} took too long to respond!", message.author.name);
-                break 'main_loop;
-            }
-
-            _ => {
-                speak("INVALID", "Invalid response, retrying!", context, message).await;
-            }
-        }
+async fn tycoon(context: &Context, message: &Message, args: Args) -> CommandResult {
+    let argument = args.message().trim();
+    if argument.to_uppercase() != "HELP" {
+        game_loop(context, message).await?;
+    } else {
+        speak("HELP", HELP_MESSAGE, context, message).await;
     }
-
     Ok(())
 }
