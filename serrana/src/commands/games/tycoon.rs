@@ -190,6 +190,7 @@ async fn register_player(context: &Context, message: &Message) -> CommandResult 
         Player {
             username: new_user.to_uppercase(),
             credits: 0,
+            cuties: 0,
         },
     );
     let parsed_user = toml::to_string(&database).expect("Error parsing new user to TOML!");
@@ -222,6 +223,7 @@ async fn register_player(context: &Context, message: &Message) -> CommandResult 
 struct Player {
     username: String,
     credits: usize,
+    cuties: usize,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
