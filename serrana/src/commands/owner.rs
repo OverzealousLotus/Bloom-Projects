@@ -39,13 +39,11 @@ async fn coil(context: &Context, message: &Message) -> CommandResult {
 
 #[command]
 #[owners_only]
-async fn dev(context: &Context, message: &Message, mut _args: Args) -> CommandResult {
-    let response = MessageBuilder::new().push("Developer ping!").build();
-    if let Err(reason) = message.channel_id.say(&context.http, response).await {
-        error!("Error sending message: {:?}", reason)
+async fn dev(context: &Context, message: &Message, _args: Args) -> CommandResult {
+    if let Err(reason) = message.channel_id.say(&context.http, "Dev ping!").await {
+        error!("Error!: {}", reason);
     } else {
-        info!("I received a developer ping from: {}", message.author.name);
+        info!("Dev pinged!");
     }
-
     Ok(())
 }
