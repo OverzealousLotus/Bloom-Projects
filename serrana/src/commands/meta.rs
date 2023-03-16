@@ -1,5 +1,8 @@
 // Meta-Commands
 
+// <=== Tokio ===>
+use tokio::time::Duration;
+
 // <=== Serenity ===>
 use serenity::framework::standard::macros::command;
 use serenity::framework::standard::{Args, CommandResult};
@@ -19,11 +22,8 @@ const HELP_MESSAGE: &str = "Commands:
 <=== Minigames ===>
 | :regional_indicator_w: -> preword: Word Guessing Game!
 | :scissors: -> roshambo: Rock, Paper, Scissors!
+| :factory: -> tycoon: Builtin Tycoon!
 <=== Math ===>
-| :heavy_plus_sign: -> add: Add two values
-| :heavy_minus_sign: -> subtract: Subtract two values
-| :heavy_multiplication_x: -> multiply: Multiply two values
-| :heavy_division_sign: -> divide: Divide two values
 | :hash: -> evaluate: Evaluate more complex equations.
 <=== Definitions ===>
 | -> def_ikaros: What is an Ikaros?
@@ -31,6 +31,40 @@ const HELP_MESSAGE: &str = "Commands:
 | :exclamation: -> ping: Is Serrana alive?
 | :revolving_hearts: -> meter: Love meter between two people!
 ";
+
+// <===== Functions =====>
+async fn gather(prompt: &str, timeout: u64, context: &Context, message: &Message) -> String {
+    let _ = message.reply(context, prompt).await;
+    let channel = message.channel_id;
+    if let Some(answer) = channel
+        .await_reply(context)
+        .timeout(Duration::from_secs(timeout))
+        .await
+    {
+        answer.content.to_string()
+    } else {
+        error!("An error occurred trying to fetch intake!");
+        String::from("Noop")
+    }
+}
+
+async fn speak(command: &str, response: &str, context: &Context, message: &Message) {
+    if let Err(reason) = message.channel_id.say(&context.http, response).await {
+        error!("An error occurred speaking!: {}", reason)
+    } else {
+        info!("Speak was invoked for {}!", command);
+    }
+}
+
+async fn assign_num(target: String) -> Result<u64, String> {
+    if let Err(reason) = target.parse::<u64>() {
+        error!("Error attempting to parse num!: {}", reason);
+        Err(String::from("ABORT"))
+    } else {
+        info!("Successfully parsed to u64!");
+        Ok(target.parse::<u64>().unwrap())
+    }
+}
 
 // <===== Commands =====>
 #[command]
@@ -52,7 +86,7 @@ async fn ping(context: &Context, message: &Message) -> CommandResult {
 }
 
 #[command]
-#[aliases(love_metre, metre)]
+#[aliases(love_metre, metre, lmetre)]
 async fn meter(context: &Context, message: &Message, mut args: Args) -> CommandResult {
     let person_one = args.single::<String>();
     let person_two = args.single::<String>();
@@ -81,6 +115,40 @@ async fn meter(context: &Context, message: &Message, mut args: Args) -> CommandR
     Ok(())
 }
 
+#[command]
+async fn count(context: &Context, message: &Message) -> CommandResult {
+    let mut current_num: u64 = 0;
+    let mut next_num: u64 = current_num + 1;
+    'mainloop: loop {
+        let num =
+            assign_num(gather(format!("{}", next_num).as_str(), 60, context, message).await).await;
+
+        next_num += 1;
+        if let Err(reason) = num.as_ref() {
+            error!("Invalid input!: {}", reason);
+            speak("COUNTING", "That's not a number!", context, message).await;
+            break 'mainloop;
+        }
+
+        if num.as_ref().unwrap() <= &current_num {
+            speak("COUNTING", "Streak ruined!", context, message).await;
+            info!("Current num: {} User num: {}", current_num, num.unwrap());
+            break 'mainloop;
+        } else if num.as_ref().unwrap() > &next_num {
+            speak("COUNTING", "Streak ruined!", context, message).await;
+            info!("Next num: {}, User num: {}", next_num, num.unwrap());
+            break 'mainloop;
+        } else if num.unwrap() == next_num {
+            current_num += 1;
+            next_num += 1;
+            continue;
+        } else {
+            speak("COUNTING", "Streak ruined!", context, message).await;
+            break 'mainloop;
+        }
+    }
+    Ok(())
+}
 // <=====| Definitions |=====>
 #[command]
 #[aliases(ikaros)]

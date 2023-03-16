@@ -77,6 +77,10 @@ impl EventHandler for Handler {
 struct General;
 
 #[group]
+#[commands(count)]
+struct Collector;
+
+#[group]
 #[commands(dev, coil, register_player)]
 struct Owner;
 
@@ -109,6 +113,7 @@ async fn main() {
     let framework = StandardFramework::new()
         .configure(|c| c.owners(owners).prefix("::").case_insensitivity(true))
         .group(&GENERAL_GROUP)
+        .group(&COLLECTOR_GROUP)
         .group(&OWNER_GROUP);
 
     let intents = GatewayIntents::GUILD_MESSAGES
