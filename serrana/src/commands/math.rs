@@ -13,17 +13,28 @@ use tracing::{error, info};
 use fasteval2::{ez_eval, EmptyNamespace};
 
 // <===== Constants =====>
-const HELP_MESSAGE: &str = "-----
+const HELP_MESSAGE: &str = "----------
 | Addition: 1 + 1
 | Subtraction: 1 - 1
 | Multiplication: 2 * 2
 | Division: 10 / 2
 | Remainder Division: 11 % 2
 | Exponentation: 2 ^ 2
+| <=== Comparisons ===>
 | Greater than: 10 > 2
 | Less than: 2 < 10
 | Equal to: 10 == 10
-| Not equal to: 10 != 9";
+| Not equal to: 10 != 9
+| <=== Trigonometry ===>
+| Logarithm: log(base, x)
+| Natural Log: ln(x)
+| Summation: sum(x, y, z...)
+| Sine: sin(value)
+| Cosine: cos(value)
+| Tangent: tan(value)
+| Secant: sec(value)
+| Cosecant: csc(value)
+| Cotangent: cot(value)";
 
 // <===== Functions =====>
 async fn computate(argument: &str, context: &Context, message: &Message) -> CommandResult {
