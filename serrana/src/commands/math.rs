@@ -10,7 +10,7 @@ use serenity::prelude::*;
 use tracing::{error, info};
 
 // <=== Mathematics ===>
-use evalexpr::eval;
+use fasteval2::{ez_eval, EmptyNamespace};
 
 // <===== Constants =====>
 const HELP_MESSAGE: &str = "-----
@@ -27,7 +27,45 @@ const HELP_MESSAGE: &str = "-----
 
 // <===== Functions =====>
 async fn computate(argument: &str, context: &Context, message: &Message) -> CommandResult {
-    let result = eval(argument);
+    let mut ns = EmptyNamespace;
+    let mut custom_functions = |name: &str, args: Vec<f64>| -> Option<f64> {
+        let value = args.get(0).unwrap();
+        match name {
+            "tau" => Some(ez_eval("pi() * 2", &mut ns).unwrap()),
+
+            "phi" => Some(1.618033988749894),
+
+            "sum" => Some(args.into_iter().sum()),
+
+            "sqrt" => Some(value.sqrt()),
+
+            "cbrt" => Some(value.cbrt()),
+
+            "sec" => Some(1.0 / value.cos()),
+
+            "csc" => Some(1.0 / value.sin()),
+
+            "cot" => Some(value.cos() / value.sin()),
+
+            "sech" => Some(1.0 / value.cosh()),
+
+            "csch" => Some(
+                ez_eval(
+                    format!("2 / (e()^{:?} - e()^-{:?})", args, args).as_str(),
+                    &mut ns,
+                )
+                .unwrap(),
+            ),
+
+            "coth" => Some(value.cosh() / value.sinh()),
+
+            "ln" => Some(ez_eval(format!("log(e(), {:?})", args).as_str(), &mut ns).unwrap()),
+
+            _ => None,
+        }
+    };
+
+    let result = ez_eval(argument, &mut custom_functions);
     if let Ok(response) = result {
         info!("{} used evaluate and it succeeded!", message.author.name);
         message.channel_id.say(&context.http, response).await?;

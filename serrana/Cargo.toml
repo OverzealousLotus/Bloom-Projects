@@ -13,11 +13,11 @@ lto = false
 # <=== Generic Dependencies ===>
 [dependencies]
 dotenvy = "0.15.6"
-evalexpr = "8.1.0"
 rand = "0.8.5"
 tracing = "0.1.37"
 tracing-subscriber = "0.2.0"
 toml = "0.7.2"
+fasteval2 = "2.1.1"
 
 
 # <=== Advanced Dependencies ===>

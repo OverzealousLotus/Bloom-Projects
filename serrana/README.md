@@ -6,5 +6,5 @@
 - [Rand](https://docs.rs/rand/latest/rand/)
 - [Tracing](https://docs.rs/tracing/latest/tracing/)
 - [Tracing-Subscriber](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/)
-- [Evalexpr](https://docs.rs/evalexpr/latest/evalexpr/)
+- [Fasteval2](https://docs.rs/fasteval2/latest/fasteval2/)
 - [Dotenvy](https://docs.rs/dotenvy/latest/dotenvy/)
