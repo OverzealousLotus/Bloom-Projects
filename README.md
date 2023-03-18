@@ -9,6 +9,6 @@ Serrana is a Multi-Purpose Discord Bot, written for the sole purpose of enhancin
 
 ##### Roadmap
 - Fully fledged out Tycoon.
-- Arithmetic including Trigonometry functions.
+- Arithmetic expansion
 - Commands to gamble away currency with.
 - More!
