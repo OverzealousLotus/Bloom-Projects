@@ -12,17 +12,17 @@ lto = false
 
 # <=== Generic Dependencies ===>
 [dependencies]
-dotenvy = "0.15.6"
+dotenvy = "0.15.7"
 rand = "0.8.5"
-tracing = "0.1.37"
-tracing-subscriber = "0.2.0"
+tracing = "0.1.38"
+tracing-subscriber = "0.3.17"
 toml = "0.7.2"
 fasteval2 = "2.1.1"
 
 
 # <=== Advanced Dependencies ===>
 [dependencies.tokio]
-version = "1.0"
+version = "1.28"
 features = ["macros", "signal", "rt-multi-thread", "time", "fs"]
 
 [dependencies.serenity]
@@ -30,5 +30,9 @@ version = "0.11.5"
 features = ["framework", "standard_framework", "rustls_backend", "collector"]
 
 [dependencies.serde]
-version = "1.0.152"
+version = "1.0.160"
 features = ["derive"]
+
+[dependencies.pyo3]
+version = "0.18.3"
+features = ["auto-initialize"]

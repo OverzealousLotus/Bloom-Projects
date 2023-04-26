@@ -29,20 +29,30 @@ const HELP_MESSAGE: &str = "----------
 | Logarithm: log(base, x)
 | Natural Log: ln(x)
 | Summation: sum(x, y, z...)
-| Sine: sin(value)
-| Cosine: cos(value)
-| Tangent: tan(value)
-| Secant: sec(value)
-| Cosecant: csc(value)
-| Cotangent: cot(value)";
+| Sine: sin(x)
+| Cosine: cos(x)
+| Tangent: tan(x)
+| Secant: sec(x)
+| Cosecant: csc(x)
+| Cotangent: cot(x)
+| Integration: integral(x, todo!)";
 
 // <===== Functions =====>
+
+fn expression(input: Vec<f64>) -> f64 {
+    let mut ns = EmptyNamespace;
+    ez_eval(format!("{:?}", input).as_str(), &mut ns).unwrap()
+}
 async fn computate(argument: &str, context: &Context, message: &Message) -> CommandResult {
     let mut ns = EmptyNamespace;
     let mut custom_functions = |name: &str, args: Vec<f64>| -> Option<f64> {
-        let value = args.get(0).unwrap();
+        let value = if let None = args.get(0) {
+            &0.0
+        } else {
+            args.get(0).unwrap()
+        };
         match name {
-            "tau" => Some(ez_eval("pi() * 2", &mut ns).unwrap()),
+            "tau" => Some(std::f64::consts::TAU),
 
             "phi" => Some(1.618033988749894),
 
@@ -72,6 +82,10 @@ async fn computate(argument: &str, context: &Context, message: &Message) -> Comm
 
             "ln" => Some(ez_eval(format!("log(e(), {:?})", args).as_str(), &mut ns).unwrap()),
 
+            "integral" => {
+                let result = expression(args);
+                Some(result)
+            }
             _ => None,
         }
     };
@@ -105,6 +119,5 @@ async fn evaluate(context: &Context, message: &Message, args: Args) -> CommandRe
             error!("Error printing help message: {}", reason);
         }
     }
-
     Ok(())
 }

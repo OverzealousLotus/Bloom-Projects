@@ -7,11 +7,20 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 
+use pyo3::{
+    prelude::*,
+    types::{IntoPyDict, PyModule},
+};
+
 // <=== Event Tracking ===>
 use tracing::{error, info};
 
 // <=== Local Assets ===>
 use crate::ShardManagerContainer;
+
+const CODE: &str = r#"
+print("Hello from Rust executing Python code.")
+"#;
 
 // <===== Commands =====>
 #[command]
@@ -40,7 +49,12 @@ async fn coil(context: &Context, message: &Message) -> CommandResult {
 #[command]
 #[owners_only]
 async fn dev(context: &Context, message: &Message, _args: Args) -> CommandResult {
-    if let Err(reason) = message.channel_id.say(&context.http, "Dev ping!").await {
+    Python::with_gil(|py| {
+        let activators =
+            PyModule::from_code(py, CODE, "activators.py", "activators").expect("bruh");
+    });
+
+    if let Err(reason) = message.channel_id.say(&context.http, "Hi").await {
         error!("Error!: {}", reason);
     } else {
         info!("Dev pinged!");

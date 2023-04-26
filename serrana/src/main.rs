@@ -90,7 +90,7 @@ async fn main() {
     dotenvy::dotenv().expect("Failed to load .env file!");
 
     // Initialize the logger to use environment variables.
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt::try_init().expect("Error is here.");
 
     // If you're going to use this codebase, make sure to set token to your bot's token.
     // Otherwise, your version of Serrana won't work.
