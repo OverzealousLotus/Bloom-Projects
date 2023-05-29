@@ -1,60 +1,40 @@
 // Restricted Commands
 
-// <=== Serenity ===>
-use serenity::framework::standard::macros::command;
-use serenity::framework::standard::{Args, CommandResult};
-use serenity::model::prelude::*;
-use serenity::prelude::*;
-use serenity::utils::MessageBuilder;
-
-use pyo3::{
-    prelude::*,
-    types::{IntoPyDict, PyModule},
-};
+use pyo3::{prelude::*, types::PyModule};
 
 // <=== Event Tracking ===>
 use tracing::{error, info};
 
-// <=== Local Assets ===>
-use crate::ShardManagerContainer;
+use crate::{Context, Error};
 
 const CODE: &str = r#"
 print("Hello from Rust executing Python code.")
 "#;
 
 // <===== Commands =====>
-#[command]
-#[owners_only]
-async fn coil(context: &Context, message: &Message) -> CommandResult {
-    let data = context.data.read().await;
+#[poise::command(prefix_command, owners_only, hide_in_help)]
+pub(crate) async fn coil(context: Context<'_>) -> Result<(), Error> {
+    context.say("*Coils tail and sleeps.*").await?;
 
-    if let Some(manager) = data.get::<ShardManagerContainer>() {
-        message.reply(context, "*Coils tail and sleeps.*").await?;
-        info!(
-            "{} made me coil in channel: {}!",
-            message.author.name, message.channel_id
-        );
-        manager.lock().await.shutdown_all().await;
-    } else {
-        message
-            .reply(context, "There was a problem getting the shard manager")
-            .await?;
-
-        return Ok(());
-    }
+    context
+        .framework()
+        .shard_manager()
+        .lock()
+        .await
+        .shutdown_all()
+        .await;
 
     Ok(())
 }
 
-#[command]
-#[owners_only]
-async fn dev(context: &Context, message: &Message, _args: Args) -> CommandResult {
+#[poise::command(prefix_command, owners_only, hide_in_help)]
+pub(crate) async fn dev(context: Context<'_>) -> Result<(), Error> {
     Python::with_gil(|py| {
         let activators =
             PyModule::from_code(py, CODE, "activators.py", "activators").expect("bruh");
     });
 
-    if let Err(reason) = message.channel_id.say(&context.http, "Hi").await {
+    if let Err(reason) = context.say("Hi").await {
         error!("Error!: {}", reason);
     } else {
         info!("Dev pinged!");

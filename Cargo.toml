@@ -3,31 +3,23 @@ name = "serrana"
 version = "0.1.0"
 edition = "2021"
 
-# <=== Compilation Profiles ===>
-[profile.dev]
-strip = true
-opt-level = 2
-incremental = true
-lto = false
 
 # <=== Generic Dependencies ===>
 [dependencies]
 dotenvy = "0.15.7"
 rand = "0.8.5"
-tracing = "0.1.38"
-tracing-subscriber = "0.3.17"
 toml = "0.7.2"
 fasteval2 = "2.1.1"
+poise = "0.5.5"
+dashmap = "5.4.0"
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
 
 
 # <=== Advanced Dependencies ===>
 [dependencies.tokio]
 version = "1.28"
 features = ["macros", "signal", "rt-multi-thread", "time", "fs"]
-
-[dependencies.serenity]
-version = "0.11.5"
-features = ["framework", "standard_framework", "rustls_backend", "collector"]
 
 [dependencies.serde]
 version = "1.0.160"

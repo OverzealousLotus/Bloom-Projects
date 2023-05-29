@@ -1,5 +1,5 @@
-pub mod games;
-pub mod math;
-pub mod meta;
-pub mod owner;
-pub mod responses;
+pub(crate) mod games;
+pub(crate) mod math;
+pub(crate) mod meta;
+pub(crate) mod owner;
+pub(crate) mod responses;

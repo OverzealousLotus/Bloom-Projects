@@ -5,18 +5,16 @@
 // <=== Tokio ===>
 // use tokio::time::Duration;
 
-// <=== Serenity ===>
-use serenity::model::prelude::*;
-use serenity::prelude::*;
-
 // <=== Event Tracking ===>
 use tracing::{error, info};
 
+use crate::Context;
+
 // <===== Generic =====>
-pub async fn hate(context: &Context, message: &Message) {
+pub(crate) async fn hate(context: Context<'_>) {
     let dm = {
-        message
-            .author
+        context
+            .author()
             .dm(&context, |response| response.content("Meanie! Hmph!"))
             .await
     };
@@ -24,33 +22,36 @@ pub async fn hate(context: &Context, message: &Message) {
     if let Err(reason) = dm {
         error!("Error when direct messaging user: {:?}", reason);
     } else {
-        info!("Hmph! {} is a meanie!", message.author.name);
+        info!("Hmph! {} is a meanie!", context.author().name);
     }
 }
 
-async fn speak(emoticon: &str, response: &str, context: &Context, message: &Message) {
-    if let Err(reason) = message.channel_id.say(&context.http, response).await {
+async fn speak(emoticon: &str, response: &str, context: Context<'_>) {
+    if let Err(reason) = context.say(response).await {
         error!("An error occurred replying: {}", reason);
     } else {
         info!(
             "{} {}'d in channel: {}!",
-            message.author.name, emoticon, message.channel_id
+            context.author().name,
+            emoticon,
+            context.channel_id()
         );
     }
 }
 
-pub async fn generic(context: &Context, message: &Message) {
-    match message.content.to_uppercase().as_str() {
-        "OWO" => speak("owo", "uwu", context, message).await,
+// TODO: Re-Implement generic responses
+/*pub async fn generic(context: Context<'_>) {
+    match context.author(). {
+        "OWO" => speak("owo", "uwu", context).await,
 
-        "UWU" => speak("uwu", "owo", context, message).await,
+        "UWU" => speak("uwu", "owo", context).await,
 
-        "O3O" => speak("o3o", "u3u", context, message).await,
+        "O3O" => speak("o3o", "u3u", context).await,
 
-        "U3U" => speak("u3u", "o3o", context, message).await,
+        "U3U" => speak("u3u", "o3o", context).await,
 
-        "SERRANA" => speak("hello", "Hi!", context, message).await,
+        "SERRANA" => speak("hello", "Hi!", context).await,
 
         _ => {}
     }
-}
+}*/

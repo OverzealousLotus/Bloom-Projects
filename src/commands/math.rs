@@ -1,16 +1,12 @@
 // Arithmetic
 
-// <=== Serenity ===>
-use serenity::framework::standard::macros::command;
-use serenity::framework::standard::{Args, CommandResult};
-use serenity::model::prelude::*;
-use serenity::prelude::*;
-
 // <=== Event Tracking ===>
 use tracing::{error, info};
 
 // <=== Mathematics ===>
 use fasteval2::{ez_eval, EmptyNamespace};
+
+use crate::{Context, Error};
 
 // <===== Constants =====>
 const HELP_MESSAGE: &str = "----------
@@ -20,6 +16,13 @@ const HELP_MESSAGE: &str = "----------
 | Division: 10 / 2
 | Remainder Division: 11 % 2
 | Exponentation: 2 ^ 2
+| Square Root: sqrt(x)
+| Cube Root: cbrt(x)
+| <=== Constants ===>
+| Pi: pi()
+| Tau: tau()
+| Phi: phi()
+| 
 | <=== Comparisons ===>
 | Greater than: 10 > 2
 | Less than: 2 < 10
@@ -33,8 +36,11 @@ const HELP_MESSAGE: &str = "----------
 | Cosine: cos(x)
 | Tangent: tan(x)
 | Secant: sec(x)
+| Hyperbolic Secant: sech(x)
 | Cosecant: csc(x)
+| Hyperbolic Cosecant: csch(x)
 | Cotangent: cot(x)
+| Hyperbolic Cotangent: coth(x)
 | Integration: integral(x, todo!)";
 
 // <===== Functions =====>
@@ -43,13 +49,13 @@ fn expression(input: Vec<f64>) -> f64 {
     let mut ns = EmptyNamespace;
     ez_eval(format!("{:?}", input).as_str(), &mut ns).unwrap()
 }
-async fn computate(argument: &str, context: &Context, message: &Message) -> CommandResult {
+async fn computate(argument: &str, context: Context<'_>) -> Result<(), Error> {
     let mut ns = EmptyNamespace;
     let mut custom_functions = |name: &str, args: Vec<f64>| -> Option<f64> {
-        let value = if let None = args.get(0) {
+        let value = if args.first().is_none() {
             &0.0
         } else {
-            args.get(0).unwrap()
+            args.first().unwrap()
         };
         match name {
             "tau" => Some(std::f64::consts::TAU),
@@ -92,32 +98,27 @@ async fn computate(argument: &str, context: &Context, message: &Message) -> Comm
 
     let result = ez_eval(argument, &mut custom_functions);
     if let Ok(response) = result {
-        info!("{} used evaluate and it succeeded!", message.author.name);
-        message.channel_id.say(&context.http, response).await?;
+        info!("{} used evaluate and it succeeded!", context.author().name);
+        context.say(response.to_string()).await?;
     } else {
         error!(
-            "{} used evaluate! Their equation: {} was considered invalid!",
-            message.author.name, message.content
+            "{} used evaluate! Their equation: {:?} was considered invalid!", // TODO: Re-Implement showing inputted equation.
+            context.author().name,
+            argument
         );
-        message
-            .channel_id
-            .say(&context.http, "Unable to computate equation...")
-            .await?;
+        context.say("Unable to computate equation...").await?;
     }
     Ok(())
 }
 
 // <===== Commands =====>
-#[command]
-#[aliases(eval)]
-async fn evaluate(context: &Context, message: &Message, args: Args) -> CommandResult {
-    let argument = args.message().trim();
+#[poise::command(slash_command, prefix_command)]
+pub(crate) async fn evaluate(context: Context<'_>, args: String) -> Result<(), Error> {
+    let argument = args.trim();
     if argument.to_uppercase() != "HELP" {
-        computate(argument, context, message).await?;
-    } else {
-        if let Err(reason) = message.channel_id.say(&context.http, HELP_MESSAGE).await {
-            error!("Error printing help message: {}", reason);
-        }
+        computate(argument, context).await?;
+    } else if let Err(reason) = context.say(HELP_MESSAGE).await {
+        error!("Error printing help message: {}", reason);
     }
     Ok(())
 }

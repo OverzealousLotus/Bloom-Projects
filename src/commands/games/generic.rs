@@ -5,18 +5,14 @@
 // <=== Tokio ===>
 use tokio::time::Duration;
 
-// <=== Serenity ===>
-use serenity::framework::standard::macros::command;
-use serenity::framework::standard::{Args, CommandResult};
-use serenity::model::prelude::*;
-use serenity::prelude::*;
-use serenity::utils::MessageBuilder;
-
 // <=== Event Tracking ===>
 use tracing::{error, info};
 
 // <=== Random ===>
 use rand::Rng;
+
+use crate::serenity::MessageBuilder;
+use crate::{Context, Error};
 
 // ==========
 // Rock, Paper, Scissors!
@@ -67,9 +63,9 @@ fn scissors(player: String) -> String {
 // <===== Structs =====>
 
 // <===== Main Logic =====>
-#[command]
-async fn roshambo(context: &Context, message: &Message, _: Args) -> CommandResult {
-    info!("{} started a Roshambo game!", message.author.name);
+#[poise::command(slash_command, prefix_command)]
+pub(crate) async fn roshambo(context: Context<'_>) -> Result<(), Error> {
+    info!("{} started a Roshambo game!", context.author().name);
 
     let response = MessageBuilder::new()
         .push_bold_safe(ROCK)
@@ -80,12 +76,12 @@ async fn roshambo(context: &Context, message: &Message, _: Args) -> CommandResul
         .push("?")
         .build();
 
-    let _ = message.reply(context, response).await;
+    let _ = context.say(response).await;
     let decisions: Vec<&'static str> = vec![ROCK, PAPER, SCISSORS];
     let ser_choice = decisions[rand::thread_rng().gen_range(0..3)];
 
-    let winner: String = if let Some(answer) = message
-        .author
+    let winner: String = if let Some(answer) = context
+        .author()
         .await_reply(context)
         .timeout(Duration::from_secs(10))
         .await
@@ -109,25 +105,25 @@ async fn roshambo(context: &Context, message: &Message, _: Args) -> CommandResul
             .push_bold_safe(ser_choice)
             .push("!")
             .build();
-        let _ = message.reply(context, response).await;
+        let _ = context.say(response).await;
     } else if winner == "LOSS" {
         let response = MessageBuilder::new()
             .push("You lost! I chose: ")
             .push_bold_safe(ser_choice)
             .push("!")
             .build();
-        let _ = message.reply(context, response).await;
+        let _ = context.say(response).await;
     } else if winner == "TIE" {
         let response = MessageBuilder::new()
             .push("It's a tie! I chose: ")
             .push_bold_safe(ser_choice)
             .push("!")
             .build();
-        let _ = message.reply(context, response).await;
+        let _ = context.say(response).await;
     } else if winner == "INVALID" {
-        let _ = message.reply(context, "Error, variable invalid.").await;
+        let _ = context.say("Error, variable invalid.").await;
     } else {
-        let _ = message.reply(context, "Unknown error!").await;
+        let _ = context.say("Unknown error!").await;
     }
     Ok(())
 }
@@ -175,9 +171,9 @@ fn fetch_word() -> &'static str {
 // <===== Structs =====>
 
 // <===== Main Logic =====>
-#[command]
-async fn preword(context: &Context, message: &Message, _: Args) -> CommandResult {
-    info!("{} started a Preword game!", message.author.name);
+#[poise::command(slash_command, prefix_command)]
+pub(crate) async fn preword(context: Context<'_>) -> Result<(), Error> {
+    info!("{} started a Preword game!", context.author().name);
     let word_one = fetch_word();
     let word_two = fetch_word();
     let word_three = fetch_word();
@@ -191,13 +187,13 @@ async fn preword(context: &Context, message: &Message, _: Args) -> CommandResult
         .push("?")
         .build();
 
-    let _ = message.reply(context, response).await;
+    let _ = context.say(response).await;
     let decisions: Vec<&'static str> = vec![word_one, word_two, word_three];
     let choice = decisions[rand::thread_rng().gen_range(0..2)];
 
     // Await response from participant!
-    if let Some(answer) = &message
-        .author
+    if let Some(answer) = context
+        .author()
         .await_reply(context)
         .timeout(Duration::from_secs(10))
         .await
@@ -222,10 +218,10 @@ async fn preword(context: &Context, message: &Message, _: Args) -> CommandResult
             let _ = answer.reply(context, response).await;
         }
     } else {
-        let _ = message.reply(context, "Too slow! Game aborted!").await;
+        let _ = context.say("Too slow! Game aborted!").await;
         error!(
             "Participant failed to reply in channel: {}",
-            message.channel_id
+            context.channel_id()
         );
     }
 

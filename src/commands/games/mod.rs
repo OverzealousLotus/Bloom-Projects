@@ -1,2 +1,2 @@
-pub mod generic;
-pub mod tycoon;
+pub(crate) mod generic;
+pub(crate) mod tycoon;

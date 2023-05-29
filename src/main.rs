@@ -1,145 +1,144 @@
-// Serrana, a Multi-Purpose Discord Bot
+// Serrana, a Multi-purpose bot.
+#![warn(
+    clippy::str_to_string,
+    noop_method_call,
+    single_use_lifetimes,
+    trivial_casts,
+    unreachable_pub,
+    unused_crate_dependencies
+)]
+#![forbid(unsafe_code)]
 
-// <=== Modules ===>
 mod commands;
 
-// <=== Standard Library ===>
-use std::collections::HashSet;
-use std::env;
-use std::sync::Arc;
+/// Bringing external crates into scope.
+use dashmap::DashMap;
+use poise::serenity_prelude as serenity;
+use tokio::time::Duration;
 
-// <=== Serenity ===>
-use serenity::async_trait;
-use serenity::client::bridge::gateway::ShardManager;
-use serenity::framework::standard::macros::group;
-use serenity::framework::StandardFramework;
-use serenity::http::Http;
-use serenity::model::channel::Message;
-use serenity::model::event::ResumedEvent;
-use serenity::model::gateway::Ready;
-use serenity::prelude::*;
-use serenity::utils::MessageBuilder;
+use tracing::info;
 
-// <=== Event Tracking ===>
-use tracing::{error, info};
+/// Types used by all command functions
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 
-// <=== Local Assets ===>
-use crate::commands::games::{generic::*, tycoon::*};
-use crate::commands::math::*;
-use crate::commands::meta::*;
-use crate::commands::owner::*;
-
-pub struct ShardManagerContainer;
-
-impl TypeMapKey for ShardManagerContainer {
-    type Value = Arc<Mutex<ShardManager>>;
+/// User data passed to all functions defined.
+pub struct Data {
+    _votes: DashMap<String, u32>, // Currently unused.
 }
 
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-    async fn message(&self, context: Context, message: Message) {
-        match message.content.to_uppercase().as_str() {
-            "I LOVE YOU SERRANA" | "ILY SERRANA" => {
-                let response = MessageBuilder::new()
-                    .push("I love you too, ")
-                    .push_bold_safe(&message.author.name)
-                    .build();
-
-                if let Err(reason) = message.channel_id.say(&context.http, &response).await {
-                    error!("Error sending message: {:?}", reason);
-                }
+/// What to do when an error occurs while running.
+async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
+    // This is our custom error handler
+    // They are many errors that can occur, so we only handle the ones we want to customize
+    // and forward the rest to the default handler
+    match error {
+        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {:?}", error),
+        poise::FrameworkError::Command { error, ctx } => {
+            println!("Error in command `{}`: {:?}", ctx.command().name, error,);
+        }
+        error => {
+            if let Err(e) = poise::builtins::on_error(error).await {
+                println!("Error while handling error: {}", e)
             }
-
-            "I HATE YOU SERRANA" => {
-                commands::responses::hate(&context, &message).await;
-            }
-
-            "UWU" | "OWO" | "O3O" | "U3U" if !message.author.bot => {
-                commands::responses::generic(&context, &message).await;
-            }
-
-            _ => {} // Do nothing!
         }
     }
-    async fn ready(&self, _: Context, ready: Ready) {
-        info!("Connected as {}", ready.user.name);
-    }
-
-    async fn resume(&self, _: Context, _: ResumedEvent) {
-        info!("Resumed");
-    }
 }
 
-#[group]
-#[commands(evaluate, ping, meter, help, preword, roshambo, tycoon, def_ikaros)]
-struct General;
-
-#[group]
-#[commands(count)]
-struct Collector;
-
-#[group]
-#[commands(dev, coil, register_player)]
-struct Owner;
-
+/// Main function to put everything together.
 #[tokio::main]
 async fn main() {
-    // Initialize Environment Variables in .env file.
     dotenvy::dotenv().expect("Failed to load .env file!");
 
-    // Initialize the logger to use environment variables.
-    tracing_subscriber::fmt::try_init().expect("Error is here.");
+    tracing_subscriber::fmt::try_init().expect("Failed to start logger.");
 
-    // If you're going to use this codebase, make sure to set token to your bot's token.
-    // Otherwise, your version of Serrana won't work.
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-
-    let http = Http::new(&token);
-
-    // Fetch bot owners & id.
-    let (owners, _bot_id) = match http.get_current_application_info().await {
-        Ok(info) => {
-            let mut owners = HashSet::new();
-            owners.insert(info.owner.id);
-
-            (owners, info.id)
-        }
-        Err(reason) => panic!("Could not access application info: {:?}", reason),
+    // FrameworkOptions contains all of poise's configuration option in one struct
+    // Every option can be omitted to use its default value
+    let options = poise::FrameworkOptions {
+        commands: vec![
+            commands::meta::help(),
+            commands::meta::ping(),
+            commands::meta::def_ikaros(),
+            commands::meta::count(),
+            commands::meta::meter(),
+            commands::math::evaluate(),
+            commands::owner::coil(),
+            commands::owner::dev(),
+            commands::games::generic::roshambo(),
+            commands::games::generic::preword(),
+            commands::games::tycoon::tycoon(),
+        ],
+        prefix_options: poise::PrefixFrameworkOptions {
+            prefix: Some("::".into()),
+            edit_tracker: Some(poise::EditTracker::for_timespan(Duration::from_secs(3600))),
+            additional_prefixes: vec![
+                poise::Prefix::Literal("ser"),
+                poise::Prefix::Literal("serrana"),
+            ],
+            ..Default::default()
+        },
+        /// The global error handler for all error cases that may occur
+        on_error: |error| Box::pin(on_error(error)),
+        /// This code is run before every command
+        pre_command: |context| {
+            Box::pin(async move {
+                println!("Executing command {}...", context.command().qualified_name);
+            })
+        },
+        /// This code is run after a command if it was successful (returned Ok)
+        post_command: |context| {
+            Box::pin(async move {
+                info!(
+                    "{} used command '{}' in channel {}!",
+                    context.author().name,
+                    context.command().qualified_name.to_uppercase(),
+                    context.channel_id()
+                )
+            })
+        },
+        /// Every command invocation must pass this check to continue execution
+        command_check: Some(|context| {
+            Box::pin(async move {
+                if context.author().id == 0 {
+                    // Basically bans the user from invoking commands.
+                    return Ok(false);
+                }
+                Ok(true)
+            })
+        }),
+        /// Enforce command checks even for owners (enforced by default)
+        /// Set to true to bypass checks, which is useful for testing
+        skip_checks_for_owners: false,
+        event_handler: |_context, event, _framework, _data| {
+            Box::pin(async move {
+                println!("Got an event in event handler: {:?}", event.name());
+                // println!("{:?}", _context.data.read().await.get::<_>().unwrap());
+                Ok(())
+            })
+        },
+        ..Default::default()
     };
 
-    // Create framework
-    let framework = StandardFramework::new()
-        .configure(|c| c.owners(owners).prefix("::").case_insensitivity(true))
-        .group(&GENERAL_GROUP)
-        .group(&COLLECTOR_GROUP)
-        .group(&OWNER_GROUP);
-
-    let intents = GatewayIntents::GUILD_MESSAGES
-        | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT;
-    let mut client = Client::builder(&token, intents)
-        .framework(framework)
-        .event_handler(Handler)
+    poise::Framework::builder()
+        .token(
+            dotenvy::var("DISCORD_TOKEN")
+                .expect("Missing `DISCORD_TOKEN` env var, see README for more information."),
+        )
+        .setup(move |context, _ready, framework| {
+            Box::pin(async move {
+                println!("Logged in as {}", _ready.user.name);
+                poise::builtins::register_globally(context, &framework.options().commands).await?;
+                Ok(Data {
+                    _votes: DashMap::new(),
+                })
+            })
+        })
+        .options(options)
+        .intents(
+            serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
+        )
+        .initialize_owners(true)
+        .run()
         .await
-        .expect("Err creating client");
-
-    {
-        let mut data = client.data.write().await;
-        data.insert::<ShardManagerContainer>(client.shard_manager.clone());
-    }
-
-    let shard_manager = client.shard_manager.clone();
-
-    tokio::spawn(async move {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("Could not register ctrl+c handler");
-        shard_manager.lock().await.shutdown_all().await;
-    });
-
-    if let Err(reason) = client.start().await {
-        error!("Client error: {:?}", reason);
-    }
+        .unwrap();
 }
