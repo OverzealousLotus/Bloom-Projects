@@ -30,7 +30,7 @@ pub(crate) async fn coil(context: Context<'_>) -> Result<(), Error> {
 #[poise::command(prefix_command, owners_only, hide_in_help)]
 pub(crate) async fn dev(context: Context<'_>) -> Result<(), Error> {
     Python::with_gil(|py| {
-        let activators =
+        let _activators =
             PyModule::from_code(py, CODE, "activators.py", "activators").expect("bruh");
     });
 
