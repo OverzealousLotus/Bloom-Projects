@@ -11,4 +11,4 @@ Cargo.lock
 
 # <=== Ignored Sensitive Files ===>
 .env
-assets/database.toml
+src/assets/database.toml
