@@ -11,7 +11,7 @@ use tracing::{error, info};
 use crate::Context;
 
 // <===== Generic =====>
-pub(crate) async fn hate(context: Context<'_>) {
+pub(crate) async fn _hate(context: Context<'_>) {
     let dm = {
         context
             .author()
@@ -26,7 +26,7 @@ pub(crate) async fn hate(context: Context<'_>) {
     }
 }
 
-async fn speak(emoticon: &str, response: &str, context: Context<'_>) {
+async fn _speak(emoticon: &str, response: &str, context: Context<'_>) {
     if let Err(reason) = context.say(response).await {
         error!("An error occurred replying: {}", reason);
     } else {
