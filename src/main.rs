@@ -9,6 +9,7 @@
 )]
 #![forbid(unsafe_code)]
 
+mod assets;
 mod commands;
 
 /// Bringing external crates into scope.
