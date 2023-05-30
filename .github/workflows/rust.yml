@@ -16,11 +16,28 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    # Cache installation of `cargo-audit`
+    - name: Cache cargo-audit 
+      id: cache-audit
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/bin/
+        key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
+  
+    # Check to see if `cargo-audit` is installed. If not, install it.
     - name: Install cargo-audit
+      if: steps.cache-audit.outputs.cache-hit != 'true'
       run: cargo install cargo-audit
+
+    # Build project verbosely.
     - name: Build
       run: cargo build --verbose
+
+    # Check project using `clippy` for linting issues.
     - name: Clippy
       run: cargo clippy --verbose -- -D warnings
+
+    # Audit dependencies for vulnerabilities.
     - name: Audit
       run: cargo audit
