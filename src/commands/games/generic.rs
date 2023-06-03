@@ -1,16 +1,13 @@
 // Generic games!
 
-// <=== Standard Library ===>
-
 // <=== Tokio ===>
 use tokio::time::Duration;
 
 // <=== Event Tracking ===>
 use tracing::{error, info};
 
-// <=== Random ===>
-use rand::Rng;
-
+// <=== Local Assets ===>
+use crate::assets::common::{gen_num, speak};
 use crate::serenity::MessageBuilder;
 use crate::{Context, Error};
 
@@ -23,40 +20,47 @@ const ROCK: &str = "ROCK";
 const PAPER: &str = "PAPER";
 const SCISSORS: &str = "SCISSORS";
 
+enum State {
+    Win,
+    Loss,
+    Tie,
+    Invalid,
+}
+
 // <===== Functions =====>
-fn rock(player: String) -> String {
+fn rock(player: String) -> State {
     if player == *"PAPER" {
-        String::from("WIN")
+        State::Win
     } else if player == *"SCISSORS" {
-        String::from("LOSS")
+        State::Loss
     } else if player == *"ROCK" {
-        String::from("TIE")
+        State::Tie
     } else {
-        String::from("INVALID")
+        State::Invalid
     }
 }
 
-fn paper(player: String) -> String {
+fn paper(player: String) -> State {
     if player == *"SCISSORS" {
-        String::from("WIN")
+        State::Win
     } else if player == *"ROCK" {
-        String::from("LOSS")
+        State::Loss
     } else if player == *"PAPER" {
-        String::from("TIE")
+        State::Tie
     } else {
-        String::from("INVALID")
+        State::Invalid
     }
 }
 
-fn scissors(player: String) -> String {
+fn scissors(player: String) -> State {
     if player == *"ROCK" {
-        String::from("WIN")
+        State::Win
     } else if player == *"PAPER" {
-        String::from("LOSS")
+        State::Loss
     } else if player == *"SCISSORS" {
-        String::from("TIE")
+        State::Tie
     } else {
-        String::from("INVALID")
+        State::Invalid
     }
 }
 
@@ -76,11 +80,11 @@ pub(crate) async fn roshambo(context: Context<'_>) -> Result<(), Error> {
         .push("?")
         .build();
 
-    let _ = context.say(response).await;
-    let decisions: Vec<&'static str> = vec![ROCK, PAPER, SCISSORS];
-    let ser_choice = decisions[rand::thread_rng().gen_range(0..3)];
+    speak(&response, context).await;
+    let decisions: [&str; 3] = [ROCK, PAPER, SCISSORS];
+    let ser_choice = decisions[gen_num(3).await];
 
-    let winner: String = if let Some(answer) = context
+    let winner: State = if let Some(answer) = context
         .author()
         .await_reply(context)
         .timeout(Duration::from_secs(10))
@@ -92,38 +96,41 @@ pub(crate) async fn roshambo(context: Context<'_>) -> Result<(), Error> {
             "SCISSORS" => scissors(answer.content.clone().to_uppercase()),
             _ => {
                 error!("Invalid choice!");
-                String::from("TIE")
+                State::Tie
             }
         }
     } else {
-        String::from("TIE")
+        State::Tie
     };
 
-    if winner == "WIN" {
-        let response = MessageBuilder::new()
-            .push("You win! I chose: ")
-            .push_bold_safe(ser_choice)
-            .push("!")
-            .build();
-        let _ = context.say(response).await;
-    } else if winner == "LOSS" {
-        let response = MessageBuilder::new()
-            .push("You lost! I chose: ")
-            .push_bold_safe(ser_choice)
-            .push("!")
-            .build();
-        let _ = context.say(response).await;
-    } else if winner == "TIE" {
-        let response = MessageBuilder::new()
-            .push("It's a tie! I chose: ")
-            .push_bold_safe(ser_choice)
-            .push("!")
-            .build();
-        let _ = context.say(response).await;
-    } else if winner == "INVALID" {
-        let _ = context.say("Error, variable invalid.").await;
-    } else {
-        let _ = context.say("Unknown error!").await;
+    match winner {
+        State::Win => {
+            let response = MessageBuilder::new()
+                .push("You win! I chose: ")
+                .push_bold_safe(ser_choice)
+                .push("!")
+                .build();
+            speak(&response, context).await;
+        }
+        State::Loss => {
+            let response = MessageBuilder::new()
+                .push("You lost! I chose: ")
+                .push_bold_safe(ser_choice)
+                .push("!")
+                .build();
+            speak(&response, context).await;
+        }
+        State::Tie => {
+            let response = MessageBuilder::new()
+                .push("It's a tie! I chose: ")
+                .push_bold_safe(ser_choice)
+                .push("!")
+                .build();
+            speak(&response, context).await;
+        }
+        State::Invalid => {
+            speak("Error, variable invalid.", context).await;
+        }
     }
     Ok(())
 }
@@ -135,7 +142,7 @@ pub(crate) async fn roshambo(context: Context<'_>) -> Result<(), Error> {
 // <===== Constants =====>
 
 // <===== Functions =====>
-fn fetch_word() -> &'static str {
+async fn fetch_word() -> &'static str {
     let words: [&'static str; 26] = [
         "AERIAL",
         "BUTTERSCOTCH",
@@ -165,7 +172,7 @@ fn fetch_word() -> &'static str {
         "ZEALOUS",
     ];
 
-    words[rand::thread_rng().gen_range(0..26)]
+    words[gen_num(26).await]
 }
 
 // <===== Structs =====>
@@ -174,9 +181,9 @@ fn fetch_word() -> &'static str {
 #[poise::command(slash_command, prefix_command)]
 pub(crate) async fn preword(context: Context<'_>) -> Result<(), Error> {
     info!("{} started a Preword game!", context.author().name);
-    let word_one = fetch_word();
-    let word_two = fetch_word();
-    let word_three = fetch_word();
+    let word_one = fetch_word().await;
+    let word_two = fetch_word().await;
+    let word_three = fetch_word().await;
 
     let response = MessageBuilder::new()
         .push(word_one)
@@ -187,9 +194,9 @@ pub(crate) async fn preword(context: Context<'_>) -> Result<(), Error> {
         .push("?")
         .build();
 
-    let _ = context.say(response).await;
-    let decisions: Vec<&'static str> = vec![word_one, word_two, word_three];
-    let choice = decisions[rand::thread_rng().gen_range(0..2)];
+    speak(&response, context).await;
+    let decisions: [&str; 3] = [word_one, word_two, word_three];
+    let choice = decisions[gen_num(2).await];
 
     // Await response from participant!
     if let Some(answer) = context
@@ -218,7 +225,7 @@ pub(crate) async fn preword(context: Context<'_>) -> Result<(), Error> {
             let _ = answer.reply(context, response).await;
         }
     } else {
-        let _ = context.say("Too slow! Game aborted!").await;
+        speak("Too slow! Game aborted!", context).await;
         error!(
             "Participant failed to reply in channel: {}",
             context.channel_id()
