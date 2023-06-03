@@ -7,13 +7,14 @@ edition = "2021"
 # <=== Generic Dependencies ===>
 [dependencies]
 dotenvy = "0.15.7"
-rand = "0.8.5"
 toml = "0.7.2"
 fasteval2 = "2.1.1"
 poise = "0.5.5"
 dashmap = "5.4.0"
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
+tinyrand = "0.5.0"
+tinyrand-std = "0.5.0"
 
 
 # <=== Advanced Dependencies ===>
