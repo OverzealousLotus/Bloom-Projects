@@ -6,42 +6,48 @@ use tracing::{error, info};
 // <=== Mathematics ===>
 use fasteval2::{ez_eval, EmptyNamespace};
 
+use crate::assets::common::speak;
 use crate::{Context, Error};
 
 // <===== Constants =====>
-const HELP_MESSAGE: &str = "----------
-| Addition: 1 + 1
-| Subtraction: 1 - 1
-| Multiplication: 2 * 2
-| Division: 10 / 2
-| Remainder Division: 11 % 2
-| Exponentation: 2 ^ 2
-| Square Root: sqrt(x)
-| Cube Root: cbrt(x)
-| <=== Constants ===>
-| Pi: pi()
-| Tau: tau()
-| Phi: phi()
-| 
-| <=== Comparisons ===>
-| Greater than: 10 > 2
-| Less than: 2 < 10
-| Equal to: 10 == 10
-| Not equal to: 10 != 9
-| <=== Trigonometry ===>
-| Logarithm: log(base, x)
-| Natural Log: ln(x)
-| Summation: sum(x, y, z...)
-| Sine: sin(x)
-| Cosine: cos(x)
-| Tangent: tan(x)
-| Secant: sec(x)
-| Hyperbolic Secant: sech(x)
-| Cosecant: csc(x)
-| Hyperbolic Cosecant: csch(x)
-| Cotangent: cot(x)
-| Hyperbolic Cotangent: coth(x)
-| Integration: integral(x, todo!)";
+const HELP_MESSAGE: &str = "
+### <===== Basics =====>
+- Addition: 1 + 1
+- Subtraction: 1 - 1
+- Multiplication: 2 * 2
+- Division: 10 / 2
+- Remainder Division: 11 % 2
+- Exponentation: 2 ^ 2
+- Square Root: sqrt(x)
+- Cube Root: cbrt(x)
+- Nth Root: nth_root(n, x)
+### <===== Constants =====>
+- π: pi()
+- τ: tau()
+- φ: phi()
+- e: e()
+### <===== Comparisons =====>
+- Greater than: 10 > 2
+- Less than: 2 < 10
+- Equal to: 10 == 10
+- Not equal to: 10 != 9
+### <===== Trigonometry =====>
+- Logarithm: log(base, x)
+   - Natural Log: ln(x)
+- Summation: sum(x, y, z...)
+- Sine: sin(x)
+   - Hyperbolic: sinh()
+- Cosine: cos(x)
+   - Hyperbolic: cosh()
+- Tangent: tan(x)
+   - Hyperbolic: tanh()
+- Secant: sec(x)
+   - Hyperbolic: sech(x)
+- Cosecant: csc(x)
+   - Hyperbolic: csch(x)
+- Cotangent: cot(x)
+   - Hyperbolic: coth(x)
+- Integration: integral(x, todo!)";
 
 // <===== Functions =====>
 
@@ -67,6 +73,8 @@ async fn computate(argument: &str, context: Context<'_>) -> Result<(), Error> {
             "sqrt" => Some(value.sqrt()),
 
             "cbrt" => Some(value.cbrt()),
+
+            "nth_root" => Some(args.get(1).unwrap().powf(1.0 / args.first().unwrap())),
 
             "sec" => Some(1.0 / value.cos()),
 
@@ -99,26 +107,29 @@ async fn computate(argument: &str, context: Context<'_>) -> Result<(), Error> {
     let result = ez_eval(argument, &mut custom_functions);
     if let Ok(response) = result {
         info!("{} used evaluate and it succeeded!", context.author().name);
-        context.say(response.to_string()).await?;
+        speak(&format!("{} = {}", argument, response), context).await;
     } else {
         error!(
-            "{} used evaluate! Their equation: {:?} was considered invalid!", // TODO: Re-Implement showing inputted equation.
+            "{} used evaluate! Their equation: {:?} was considered invalid!",
             context.author().name,
             argument
         );
-        context.say("Unable to computate equation...").await?;
+        speak("Unable to computate equation...", context).await;
     }
     Ok(())
 }
 
 // <===== Commands =====>
 #[poise::command(slash_command, prefix_command)]
-pub(crate) async fn evaluate(context: Context<'_>, args: String) -> Result<(), Error> {
+pub(crate) async fn evaluate(
+    context: Context<'_>,
+    #[description = "Expression to be evaluated."] args: String,
+) -> Result<(), Error> {
     let argument = args.trim();
     if argument.to_uppercase() != "HELP" {
         computate(argument, context).await?;
-    } else if let Err(reason) = context.say(HELP_MESSAGE).await {
-        error!("Error printing help message: {}", reason);
+    } else {
+        speak(HELP_MESSAGE, context).await;
     }
     Ok(())
 }

@@ -6,9 +6,7 @@ use tokio::time::Duration;
 // <=== Event Tracking ===>
 use tracing::{error, info};
 
-// <=== Random ===>
-use rand::Rng;
-
+use crate::assets::common::{gen_num, speak};
 use crate::serenity::MessageBuilder;
 use crate::{Context, Error};
 
@@ -41,14 +39,6 @@ async fn gather(prompt: &str, timeout: u64, context: Context<'_>) -> String {
     } else {
         error!("An error occurred trying to fetch intake!");
         String::from("Noop")
-    }
-}
-
-async fn speak(command: &str, response: &str, context: Context<'_>) {
-    if let Err(reason) = context.say(response).await {
-        error!("An error occurred speaking!: {}", reason)
-    } else {
-        info!("Speak was invoked for {}!", command);
     }
 }
 
@@ -89,7 +79,7 @@ pub(crate) async fn meter(
     #[description = "Person one to match."] lover_one: String,
     #[description = "Person two to match."] lover_two: String,
 ) -> Result<(), Error> {
-    let love_metre = rand::thread_rng().gen_range(0..100);
+    let love_metre = gen_num(100).await;
     let response = MessageBuilder::new()
         .push(":heart: ")
         .push_bold_safe(lover_one)
@@ -115,16 +105,16 @@ pub(crate) async fn count(context: Context<'_>) -> Result<(), Error> {
         next_num += 1;
         if let Err(reason) = num.as_ref() {
             error!("Invalid input!: {}", reason);
-            speak("COUNTING", "That's not a number!", context).await;
+            speak("That's not a number!", context).await;
             break 'mainloop;
         }
 
         if num.as_ref().unwrap() <= &current_num {
-            speak("COUNTING", "Streak ruined!", context).await;
+            speak("Streak ruined!", context).await;
             info!("Current num: {} User num: {}", current_num, num.unwrap());
             break 'mainloop;
         } else if num.as_ref().unwrap() > &next_num {
-            speak("COUNTING", "Streak ruined!", context).await;
+            speak("Streak ruined!", context).await;
             info!("Next num: {}, User num: {}", next_num, num.unwrap());
             break 'mainloop;
         } else if num.unwrap() == next_num {
@@ -132,7 +122,7 @@ pub(crate) async fn count(context: Context<'_>) -> Result<(), Error> {
             next_num += 1;
             continue;
         } else {
-            speak("COUNTING", "Streak ruined!", context).await;
+            speak("Streak ruined!", context).await;
             break 'mainloop;
         }
     }
